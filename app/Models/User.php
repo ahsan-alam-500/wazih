@@ -38,6 +38,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class);
     }
+    public function activity(){
+        return $this->hasMany(Activity::class);
+    }
 
     /**
      * Get the attributes that should be cast.

@@ -96,8 +96,12 @@ function generateBarcode() {
                     >
                         <option class="text-gray-800">Pending</option>
                         <option class="text-gray-800">Processing</option>
+                        <option class="text-gray-800">completed</option>
+                        <option class="text-gray-800">in courier</option>
                         <option class="text-gray-800">Shipped</option>
                         <option class="text-gray-800">Delivered</option>
+                        <option class="text-gray-800">Abandoned</option>
+                        <option class="text-gray-800">Returened</option>
                         <option class="text-gray-800">Cancelled</option>
                     </select>
                 </div>

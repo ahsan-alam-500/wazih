@@ -3,13 +3,16 @@
 namespace App\Http\Controllers\client;
 
 use App\Http\Controllers\Controller;
+use App\Models\Activity;
 use App\Models\Order;
 use App\Models\Order_items;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
+use App\Events\PlaceOrder;
 
 class OrderController extends Controller
 {
@@ -71,6 +74,14 @@ class OrderController extends Controller
                 'total'      => $request->total_price,
             ]);
 
+            Activity::create([
+                'user_id' => $userId,
+                'action' => "Order Has been Placed",
+                'description' => "A new order has been placed",
+            ]);
+
+            event(new PlaceOrder($order));
+
             return response()->json([
                 'success'   => true,
                 'message'   => 'Order created successfully',
@@ -90,7 +101,7 @@ class OrderController extends Controller
     {
         $request->validate([
             'order_id' => 'required|exists:orders,id',
-            'status' => 'nullable|string|in:Pending,Processing,Shipped,Delivered,Cancelled',
+            'status' => 'nullable|string',
             'payment_status' => 'nullable|string|in:paid,unpaid',
         ]);
 
@@ -105,6 +116,14 @@ class OrderController extends Controller
         }
 
         Order::where('id', $request->order_id)->update($data);
+
+        $user = Auth::user();
+
+        Activity::create([
+            'user_id' => $user->id,
+            'action' => "Order has been updated by {$user->name}",
+            "description" => "Order has been updated"
+        ]);
 
         return response()->json([
             'success' => true,

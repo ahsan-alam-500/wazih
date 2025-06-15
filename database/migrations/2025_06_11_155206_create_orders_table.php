@@ -15,7 +15,7 @@ class CreateOrdersTable extends Migration
             $table->decimal('total_amount', 12, 2);
             $table->string('source')->default('web');
             $table->string('payment_status')->default('unpaid');
-            $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'processing', 'completed', 'in_courier', 'shipped', 'delivered', 'abandoned', 'cancelled', 'returned'])->default('pending');
             $table->text('shipping_address')->nullable();
             $table->timestamps();
         });
