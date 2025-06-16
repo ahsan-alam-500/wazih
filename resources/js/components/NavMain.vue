@@ -28,6 +28,11 @@ const items = [
         icon: Brain,
     },
     {
+        title: 'Abandoned Orders',
+        href: '/admin/abandoned',
+        icon: ShoppingCart,
+    },
+    {
         title: 'Reports',
         href: '/admin/reports',
         icon: BarChart,

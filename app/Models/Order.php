@@ -10,6 +10,7 @@ class Order extends Model
         'user_id',
         'status',
         'order_number',
+        'source',
         'total_amount',
         'shipping_address'
     ];

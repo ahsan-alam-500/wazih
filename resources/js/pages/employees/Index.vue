@@ -6,6 +6,7 @@ const props = defineProps<{
     employees: {
         id: number;
         name: string;
+        role: string;
         email: string;
         mobile?: string;
     }[];
@@ -18,7 +19,8 @@ const filteredEmployees = computed(() =>
         (emp) =>
             emp.name.toLowerCase().includes(search.value.toLowerCase()) ||
             emp.email.toLowerCase().includes(search.value.toLowerCase()) ||
-            emp.mobile?.toLowerCase().includes(search.value.toLowerCase()),
+            emp.mobile?.toLowerCase().includes(search.value.toLowerCase()) ||
+            emp.role.toLowerCase().includes(search.value.toLowerCase()),
     ),
 );
 </script>
@@ -49,6 +51,7 @@ const filteredEmployees = computed(() =>
                         <thead class="bg-indigo-100 text-left tracking-wide text-gray-700 uppercase">
                             <tr>
                                 <th class="px-6 py-4">#</th>
+                                <th class="px-6 py-4">Role</th>
                                 <th class="px-6 py-4">Name</th>
                                 <th class="px-6 py-4">Email</th>
                                 <th class="px-6 py-4">Mobile</th>
@@ -61,6 +64,7 @@ const filteredEmployees = computed(() =>
                                 class="border-t border-gray-200 transition hover:bg-indigo-50"
                             >
                                 <td class="px-6 py-3 font-medium text-gray-600">{{ index + 1 }}</td>
+                                <td class="px-6 py-3 font-medium text-gray-600">{{ emp.role }}</td>
                                 <td class="px-6 py-3 font-semibold">{{ emp.name }}</td>
                                 <td class="px-6 py-3">{{ emp.email }}</td>
                                 <td class="px-6 py-3">{{ emp.mobile || 'Not found' }}</td>

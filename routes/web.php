@@ -3,6 +3,7 @@
 use App\Models\Activity;
 use App\Models\Order;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 

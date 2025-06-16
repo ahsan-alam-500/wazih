@@ -164,6 +164,7 @@ function generateBarcode() {
                 </button>
             </div>
         </div>
+        {{ Credential }}
     </div>
 </template>
 

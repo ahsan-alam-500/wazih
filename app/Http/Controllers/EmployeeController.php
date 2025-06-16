@@ -11,7 +11,8 @@ class EmployeeController extends Controller
 {
     public function index()
     {
-        $employee = User::where("role", "agent")->orderBy("id", "desc")->get();
+        $employee = User::whereIn("role", ["agent", "staff"])
+            ->orderBy("id", "desc")->get();
         return Inertia::render("employees/Index", [
             "employees" => $employee
         ]);

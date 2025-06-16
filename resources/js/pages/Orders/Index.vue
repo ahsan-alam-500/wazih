@@ -25,6 +25,12 @@ const props = defineProps<{
     orders: {
         data: Order[];
     };
+    credentials: {
+        id: string;
+        email: string;
+        mobile: string;
+        name: string;
+    };
 }>();
 
 const selectedOrder = ref<Order | null>(null);
@@ -47,10 +53,12 @@ async function handleStatusUpdate({
     orderId,
     newStatus,
     newPaymentStatus,
+    credentials
 }: {
     orderId: string;
     newStatus?: string | null;
     newPaymentStatus?: string | null;
+    credentials: any;
 }) {
     try {
         await axios.post('http://127.0.0.1:8000/api/v1/order/update', {
