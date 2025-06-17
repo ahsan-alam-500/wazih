@@ -9,11 +9,20 @@ use Inertia\Inertia;
 
 class OrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with(['user', 'items.product'])->paginate(10);
+        $status = $request->query('status'); // Get ?status from URL
+
+        // Filter by status if provided, and eager load user & items.product
+        $orders = Order::with(['user', 'items.product'])
+            ->when($status, fn($query) => $query->where('status', $status))
+            ->orderByDesc('id')
+            ->paginate(10)
+            ->withQueryString(); // Keep ?status in pagination links
+
         return Inertia::render('Orders/Index', [
             'orders' => $orders,
+            'status' => $status, // Pass current filter to frontend
             'credentials' => [
                 'id'     => Auth::user()?->id,
                 'name'   => Auth::user()?->name,
