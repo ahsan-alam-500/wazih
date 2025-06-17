@@ -39,12 +39,15 @@ const items = [
     { title: 'Completed', href: '/admin/orders?status=completed', icon: CheckCircle2, class: 'text-green-500' },
     { title: 'Cancelled', href: '/admin/orders?status=cancelled', icon: XCircle, class: 'text-red-500' },
     { title: 'Returned', href: '/admin/orders?status=returned', icon: Undo2, class: 'text-orange-500' },
-    { title: 'Abandoned', href: '/admin/orders?status=abandoned', icon: Trash2, class: 'text-gray-500' },
+    { title: 'Abandoned', href: '/admin/abandoned', icon: Trash2, class: 'text-gray-500' },
 
     // Other administrative links
     { title: 'Customers', href: '/admin/customers', icon: Users },
     { title: 'Employees', href: '/admin/employees', icon: Brain },
     { title: 'Reports', href: '/admin/reports', icon: BarChart },
+
+    // Landing page operate links
+    { title: 'Landing Pages', href: route('landingPages.index'), icon: ShoppingCart },
 ];
 </script>
 

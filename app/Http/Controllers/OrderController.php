@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AbandonedOrder;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +13,6 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status'); // Get ?status from URL
-
         // Filter by status if provided, and eager load user & items.product
         $orders = Order::with(['user', 'items.product'])
             ->when($status, fn($query) => $query->where('status', $status))
@@ -22,7 +22,7 @@ class OrderController extends Controller
 
         return Inertia::render('Orders/Index', [
             'orders' => $orders,
-            'status' => $status, // Pass current filter to frontend
+            'statusFilter' => $status, // Pass current filter to frontend
             'credentials' => [
                 'id'     => Auth::user()?->id,
                 'name'   => Auth::user()?->name,

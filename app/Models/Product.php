@@ -13,6 +13,7 @@ class Product extends Model
         'slug',
         'description',
         'price',
+        'discount_price',
         'quantity',
         'image',
         'status',
@@ -26,5 +27,8 @@ class Product extends Model
     public function orderItems()
     {
         return $this->hasMany(Order_items::class);
+    }
+    public function landingPage(){
+        return $this->hasMany(LandingPage::class);
     }
 }

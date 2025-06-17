@@ -1,0 +1,214 @@
+<script setup>
+import districts from '@/composables/district.js';
+import useCart from '@/composables/useCart';
+import Header from '@/pages/frontend/Header.vue';
+import { Head, router } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { useToast } from 'vue-toastification';
+
+const toast = useToast();
+const { cart, increaseQuantity, decreaseQuantity, removeFromCart, clearCart } = useCart();
+
+const name = ref('');
+const mobile = ref('');
+const email = ref('');
+const address = ref('');
+const selectedDistrict = ref('');
+const isSubmitting = ref(false);
+
+function getDeliveryCharge() {
+    return selectedDistrict.value === 'Dhaka' ? 70 : selectedDistrict.value ? 130 : 0;
+}
+
+const cartTotal = computed(() => cart.value.reduce((sum, item) => sum + item.price * item.quantity, 0));
+const total = computed(() => cartTotal.value + getDeliveryCharge());
+
+const validateForm = () => {
+    if (!name.value || !mobile.value || !email.value || !selectedDistrict.value) {
+        toast.error('সব ফিল্ড পূরণ করুন');
+        return false;
+    }
+    if (!/^\d{10,15}$/.test(mobile.value)) {
+        toast.warning('সঠিক মোবাইল নম্বর দিন');
+        return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(email.value)) {
+        toast.warning('সঠিক ইমেইল দিন');
+        return false;
+    }
+    return true;
+};
+
+const placeOrder = () => {
+    if (!validateForm()) return;
+    if (cart.value.length === 0) {
+        toast.warning('কার্ট খালি!');
+        return;
+    }
+
+    isSubmitting.value = true;
+
+    router.post(
+        '/checkout',
+        {
+            name: name.value,
+            mobile: mobile.value,
+            email: email.value,
+            shipping_address: address.value + ', ' + selectedDistrict.value,
+            payment_status: 'unpaid',
+            product_id: cart.value.map((item) => item.id),
+            quantity: cart.value.map((item) => item.quantity),
+            price: cart.value.map((item) => item.price),
+            cart: cart.value,
+            total_amount: total.value,
+            delivery_charge: getDeliveryCharge(),
+        },
+        {
+            onSuccess: () => {
+                toast.success('অর্ডার সফলভাবে প্লেস হয়েছে!');
+                clearCart();
+                name.value = '';
+                mobile.value = '';
+                email.value = '';
+                address.value = '';
+                selectedDistrict.value = '';
+                isSubmitting.value = false;
+            },
+            onError: (errors) => {
+                toast.error(errors?.message || 'কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন');
+                isSubmitting.value = false;
+            },
+        },
+    );
+};
+</script>
+
+<template>
+    <Head title="Checkout" />
+    <Header />
+
+    <div class="mx-auto max-w-6xl px-4 py-10 dark:bg-neutral-900 dark:text-white">
+        <h2 class="mb-8 text-center text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">🛍️ Checkout Page</h2>
+
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
+            <!-- Cart Section -->
+            <section class="rounded-xl bg-white p-6 shadow-lg dark:bg-neutral-800">
+                <h3 class="mb-4 border-b pb-2 text-2xl font-semibold">Your Cart</h3>
+
+                <div v-if="cart.length === 0" class="text-center text-gray-400 italic dark:text-gray-300">আপনার কার্ট খালি 🛒</div>
+
+                <div v-else>
+                    <div v-for="item in cart" :key="item.id" class="flex items-center gap-4 border-b py-4">
+                        <img :src="item.image || '/placeholder.png'" class="h-16 w-16 rounded-lg object-cover" />
+                        <div class="flex-1">
+                            <h4 class="font-semibold">{{ item.title || item.name }}</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-300">৳{{ item.price }} × {{ item.quantity }}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button
+                                class="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                @click="decreaseQuantity(item.id)"
+                                :disabled="item.quantity === 1"
+                            >
+                                −
+                            </button>
+                            <span class="px-2 font-semibold">{{ item.quantity }}</span>
+                            <button
+                                class="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
+                                @click="increaseQuantity(item.id)"
+                            >
+                                +
+                            </button>
+                            <button class="ml-2 text-sm text-red-500 hover:underline" @click="removeFromCart(item.id)">Remove</button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 space-y-2 border-t pt-4">
+                        <div class="flex justify-between text-lg">
+                            <span>Delivery Charge:</span>
+                            <span class="font-semibold text-red-600">৳{{ getDeliveryCharge() }}</span>
+                        </div>
+                        <div class="flex justify-between text-xl font-bold">
+                            <span>Total:</span>
+                            <span class="text-green-600">৳{{ total.toFixed(2) }}</span>
+                        </div>
+                        <button
+                            @click="clearCart"
+                            class="mt-4 w-full rounded-lg bg-red-100 py-2 font-semibold text-red-600 hover:bg-red-200 dark:bg-red-800 dark:text-white dark:hover:bg-red-700"
+                        >
+                            Clear Cart
+                        </button>
+                    </div>
+                </div>
+                <!-- select payment method -->
+                <div class="mt-6 space-y-2 border-t pt-4">
+                    <div class="flex justify-between text-lg">
+                        <span>Payment Method:</span>
+                        <!-- card here , bkash,sslcomerce,cod  -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Form Section -->
+            <section class="rounded-xl bg-white p-6 shadow-lg dark:bg-neutral-800">
+                <h3 class="mb-4 border-b pb-2 text-2xl font-semibold">Your Info</h3>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block font-medium">Name <span class="text-red-500">*</span></label>
+                        <input
+                            v-model="name"
+                            type="text"
+                            placeholder="আপনার নাম"
+                            class="w-full rounded-md border px-4 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label class="block font-medium">Mobile <span class="text-red-500">*</span></label>
+                        <input
+                            v-model="mobile"
+                            type="tel"
+                            placeholder="017xxxxxxxx"
+                            class="w-full rounded-md border px-4 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label class="block font-medium">Email <span class="text-red-500">*</span></label>
+                        <input
+                            v-model="email"
+                            type="email"
+                            placeholder="you@email.com"
+                            class="w-full rounded-md border px-4 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+                        />
+                    </div>
+                    <div>
+                        <label class="block font-medium">District <span class="text-red-500">*</span></label>
+                        <select
+                            v-model="selectedDistrict"
+                            class="w-full rounded-md border px-4 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+                        >
+                            <option value="" disabled>জেলা নির্বাচন করুন</option>
+                            <option v-for="district in districts" :key="district" :value="district">{{ district }}</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block font-medium">Address <span class="text-red-500">*</span></label>
+                        <textarea
+                            v-model="address"
+                            placeholder="আপনার ঠিকানা"
+                            class="w-full rounded-md border px-4 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+                        ></textarea>
+                    </div>
+
+                    <button
+                        @click="placeOrder"
+                        :disabled="isSubmitting"
+                        class="mt-6 w-full rounded-lg bg-indigo-600 py-3 text-lg font-semibold text-white hover:bg-indigo-700"
+                    >
+                        {{ isSubmitting ? 'Placing Order...' : 'Place Order Now' }}
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+</template>

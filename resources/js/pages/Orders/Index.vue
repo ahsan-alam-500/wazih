@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
+import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
 import { ref } from 'vue';
 import InvoiceModal from '../partials/Invoice.vue';
@@ -25,12 +26,7 @@ const props = defineProps<{
     orders: {
         data: Order[];
     };
-    credentials: {
-        id: string;
-        email: string;
-        mobile: string;
-        name: string;
-    };
+    statusFilter: string | null;
 }>();
 
 const selectedOrder = ref<Order | null>(null);
@@ -53,12 +49,10 @@ async function handleStatusUpdate({
     orderId,
     newStatus,
     newPaymentStatus,
-    credentials
 }: {
     orderId: string;
     newStatus?: string | null;
     newPaymentStatus?: string | null;
-    credentials: any;
 }) {
     try {
         await axios.post('http://127.0.0.1:8000/api/v1/order/update', {
@@ -126,10 +120,9 @@ async function toggleTrustCheck(orderId: string, mobile: string) {
 
 <template>
     <Head title="Orders" />
-
     <AppLayout>
         <div class="min-h-screen space-y-6 bg-neutral-900 p-6 text-white">
-            <h1 class="mb-4 text-2xl font-bold">Orders List</h1>
+            <h1 class="mb-4 text-2xl font-bold capitalize">{{ statusFilter }} Orders List 📦</h1>
 
             <div class="overflow-x-auto rounded-xl border border-neutral-700 bg-neutral-800 p-6 shadow-md backdrop-blur-md">
                 <table class="w-full min-w-[700px] text-left text-sm md:text-base lg:text-lg">
