@@ -53,7 +53,7 @@ const items = [
 
 <template>
     <!-- Sidebar group container -->
-    <SidebarGroup class="px-2 py-0">
+    <SidebarGroup class="bg-gray-200 px-2 py-0 dark:bg-gray-800">
         <!-- Group title -->
         <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
 

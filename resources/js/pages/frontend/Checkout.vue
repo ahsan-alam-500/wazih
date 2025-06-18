@@ -49,43 +49,27 @@ const placeOrder = async () => {
 
     isSubmitting.value = true;
 
-    const firstProduct = cart.value[0];
-
     try {
-        console.log({
+        const payload = {
             name: name.value,
             mobile: mobile.value,
             email: email.value,
             shipping_address: address.value + ', ' + selectedDistrict.value,
             payment_status: 'unpaid',
             source: 'website',
-            cart: cart.value,
-            total_amount: cartTotal.value,
             status: 'pending',
+            total_amount: total.value,
             delivery_charge: getDeliveryCharge(),
-        });
-        const res = await axios
-            .post('http://127.0.0.1:8000/api/v1/order', {
-                name: name.value,
-                mobile: mobile.value,
-                email: email.value,
-                shipping_address: address.value + ', ' + selectedDistrict.value,
-                payment_status: 'unpaid',
-                source: 'website',
-                product_id: firstProduct.id,
-                quantity: firstProduct.quantity,
-                price: firstProduct.price,
-                total_price: firstProduct.price * firstProduct.quantity,
-                total_amount: cartTotal.value,
-                status: 'pending',
-                delivery_charge: getDeliveryCharge(),
-            })
-            .then((res) => res.data)
-            .catch((err) => {
-                toast.error(err.response?.data?.message || 'কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন');
-                throw err;
-                console.error(err);
-            });
+            cart: cart.value.map((item) => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+            })),
+        };
+
+        const res = await axios.post('/api/v1/order', payload);
+
         toast.success(res.data.message || 'অর্ডার সফলভাবে প্লেস হয়েছে!');
         clearCart();
         name.value = '';
@@ -95,6 +79,7 @@ const placeOrder = async () => {
         selectedDistrict.value = '';
     } catch (err) {
         toast.error(err.response?.data?.message || 'কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন');
+        console.error(err);
     } finally {
         isSubmitting.value = false;
     }
@@ -108,12 +93,9 @@ const placeOrder = async () => {
         <h2 class="mb-8 text-center text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">🛍️ Checkout Page</h2>
 
         <div class="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <!-- Cart Section -->
             <section class="rounded-xl bg-white p-6 shadow-lg dark:bg-neutral-800">
                 <h3 class="mb-4 border-b pb-2 text-2xl font-semibold">Your Cart</h3>
-
                 <div v-if="cart.length === 0" class="text-center text-gray-400 italic dark:text-gray-300">আপনার কার্ট খালি 🛒</div>
-
                 <div v-else>
                     <div v-for="item in cart" :key="item.id" class="flex items-center gap-4 border-b py-4">
                         <img :src="item.image || '/placeholder.png'" class="h-16 w-16 rounded-lg object-cover" />
@@ -159,7 +141,6 @@ const placeOrder = async () => {
                 </div>
             </section>
 
-            <!-- Info Form Section -->
             <section class="rounded-xl bg-white p-6 shadow-lg dark:bg-neutral-800">
                 <h3 class="mb-4 border-b pb-2 text-2xl font-semibold">Your Info</h3>
                 <div class="space-y-4">

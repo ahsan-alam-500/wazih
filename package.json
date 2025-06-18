@@ -30,6 +30,7 @@
         "@kyvg/vue3-notification": "^3.4.1",
         "@tailwindcss/vite": "^4.1.1",
         "@vitejs/plugin-vue": "^5.2.1",
+        "@vuepic/vue-datepicker": "^11.0.2",
         "@vueuse/core": "^12.8.2",
         "chart.js": "^4.5.0",
         "class-variance-authority": "^0.7.1",

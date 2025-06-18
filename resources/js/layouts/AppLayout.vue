@@ -50,7 +50,7 @@ onMounted(async () => {
 </script>
 
 <template>
-    <AppLayout :breadcrumbs="breadcrumbs">
+    <AppLayout :breadcrumbs="breadcrumbs" class="bg-gray-400">
         <slot />
     </AppLayout>
 </template>

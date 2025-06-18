@@ -3,6 +3,7 @@
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\client\OrderController;
 use App\Models\Activity;
+use App\Models\LandingPage;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
@@ -14,8 +15,21 @@ use Inertia\Inertia;
 
 Route::get("/", function () {
     $products = Product::orderBy("id", "desc")->get();
-    return Inertia::render('Welcome', ['products' => $products]);
+    $landingPages = LandingPage::with('product')->orderBy("id", "desc")->get();
+    return Inertia::render('Welcome', [
+        'products' => $products,
+        'landingPages' => $landingPages
+    ]);
 });
+
+Route::get('landingPage/{id}/{name}', function ($id, $name) {
+    $landingPage = LandingPage::findOrFail($id);
+    return Inertia::render('frontend/LandingPage/show', [
+        'landingPage' => $landingPage,
+        'id' => $id,
+        'title' => $name,
+    ]);
+})->name('landingPage');
 
 Route::get('/admin/login', function () {
     return Inertia::render('auth/Login');
