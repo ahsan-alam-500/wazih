@@ -30,10 +30,10 @@ class OrderController extends Controller
             'payment_status'   => 'required|string',
             'shipping_address' => 'required|string',
             'status'           => 'required|string',
-            'product_id'       => 'required|integer|exists:products,id',
-            'quantity'         => 'required|integer|min:1',
-            'price'            => 'required|numeric',
-            'total_price'      => 'required|numeric',
+            'cart'             => 'required|array|min:1',
+            'cart.*.id'        => 'required|integer|exists:products,id',
+            'cart.*.quantity'  => 'required|integer|min:1',
+            'cart.*.price'     => 'required|numeric',
         ]);
 
         if ($validator->fails()) {
@@ -65,17 +65,19 @@ class OrderController extends Controller
                 'status'           => $request->status,
             ]);
 
-            Order_items::create([
-                'order_id'   => $order->id,
-                'product_id' => $request->product_id,
-                'quantity'   => $request->quantity,
-                'price'      => $request->price,
-                'total'      => $request->total_price,
-            ]);
+            foreach ($request->cart as $item) {
+                Order_items::create([
+                    'order_id'   => $order->id,
+                    'product_id' => $item['id'],
+                    'quantity'   => $item['quantity'],
+                    'price'      => $item['price'],
+                    'total'      => $item['price'] * $item['quantity'],
+                ]);
+            }
 
             Activity::create([
-                'user_id' => $user->id,
-                'action' => "Order Has been Placed",
+                'user_id'     => $user->id,
+                'action'      => "Order Has been Placed",
                 'description' => "A new order has been placed",
             ]);
 

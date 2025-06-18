@@ -2,7 +2,7 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { Head } from '@inertiajs/vue3';
 import axios from 'axios';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import InvoiceModal from '../partials/Invoice.vue';
 import TrustModal from '../partials/TrustModel.vue';
 
@@ -31,6 +31,48 @@ const props = defineProps<{
 
 const selectedOrder = ref<Order | null>(null);
 const showInvoice = ref(false);
+const trustModalVisible = ref(false);
+const trustSummary = ref<any>(null);
+
+const statusOptions = ['pending', 'processing', 'completed', 'cancelled'];
+const sourceOptions = ['facebook', 'website', 'whatsapp'];
+const datePresets = ['Today', 'This Week', 'This Month', 'Last Year'];
+
+const selectedStatus = ref('');
+const selectedSource = ref('');
+const selectedDateRange = ref('');
+
+const filteredOrders = computed(() => {
+    return props.orders.data.filter((order) => {
+        const matchStatus = selectedStatus.value ? order.status === selectedStatus.value : true;
+        const matchSource = selectedSource.value ? order.source === selectedSource.value : true;
+        const matchDate = selectedDateRange.value ? filterByDate(order.created_at) : true;
+        return matchStatus && matchSource && matchDate;
+    });
+});
+
+function filterByDate(dateStr: string) {
+    const now = new Date();
+    const date = new Date(dateStr);
+
+    switch (selectedDateRange.value) {
+        case 'Today':
+            return date.toDateString() === now.toDateString();
+        case 'This Week': {
+            const start = new Date(now);
+            start.setDate(now.getDate() - now.getDay());
+            const end = new Date(start);
+            end.setDate(start.getDate() + 6);
+            return date >= start && date <= end;
+        }
+        case 'This Month':
+            return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+        case 'Last Year':
+            return date.getFullYear() === now.getFullYear() - 1;
+        default:
+            return true;
+    }
+}
 
 function viewInvoice(orderId: string) {
     const order = props.orders.data.find((o) => o.id === orderId);
@@ -79,9 +121,6 @@ function getUserTrustLevel(mobile: string): string {
     return 'Neutral';
 }
 
-const trustModalVisible = ref(false);
-const trustSummary = ref<any>(null);
-
 async function toggleTrustCheck(orderId: string, mobile: string) {
     trustModalVisible.value = true;
     trustSummary.value = null;
@@ -122,7 +161,24 @@ async function toggleTrustCheck(orderId: string, mobile: string) {
     <Head title="Orders" />
     <AppLayout>
         <div class="min-h-screen space-y-6 bg-neutral-900 p-6 text-white">
-            <h1 class="mb-4 text-2xl font-bold capitalize">{{ statusFilter }} Orders List 📦</h1>
+            <h1 class="mb-4 text-2xl font-bold capitalize">Orders List 📦</h1>
+
+            <div class="mb-6 flex flex-wrap gap-4">
+                <select v-model="selectedStatus" class="rounded bg-neutral-800 px-4 py-2">
+                    <option value="">All Status</option>
+                    <option v-for="status in statusOptions" :key="status" :value="status">{{ status }}</option>
+                </select>
+
+                <select v-model="selectedSource" class="rounded bg-neutral-800 px-4 py-2">
+                    <option value="">All Sources</option>
+                    <option v-for="source in sourceOptions" :key="source" :value="source">{{ source }}</option>
+                </select>
+
+                <select v-model="selectedDateRange" class="rounded bg-neutral-800 px-4 py-2">
+                    <option value="">All Dates</option>
+                    <option v-for="preset in datePresets" :key="preset" :value="preset">{{ preset }}</option>
+                </select>
+            </div>
 
             <div class="overflow-x-auto rounded-xl border border-neutral-700 bg-neutral-800 p-6 shadow-md backdrop-blur-md">
                 <table class="w-full min-w-[700px] text-left text-sm md:text-base lg:text-lg">
@@ -142,7 +198,7 @@ async function toggleTrustCheck(orderId: string, mobile: string) {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="order in props.orders.data" :key="order.id" class="border-b border-neutral-700 transition hover:bg-neutral-700/40">
+                        <tr v-for="order in filteredOrders" :key="order.id" class="border-b border-neutral-700 transition hover:bg-neutral-700/40">
                             <td class="p-3 font-semibold">{{ order.id }}</td>
                             <td class="p-3">
                                 {{ order.user?.name ?? 'Guest' }}

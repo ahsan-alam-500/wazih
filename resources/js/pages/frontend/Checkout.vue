@@ -2,7 +2,8 @@
 import districts from '@/composables/district.js';
 import useCart from '@/composables/useCart';
 import Header from '@/pages/frontend/Header.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head } from '@inertiajs/vue3';
+import axios from 'axios';
 import { computed, ref } from 'vue';
 import { useToast } from 'vue-toastification';
 
@@ -28,7 +29,7 @@ const validateForm = () => {
         toast.error('সব ফিল্ড পূরণ করুন');
         return false;
     }
-    if (!/^\d{10,15}$/.test(mobile.value)) {
+    if (!/^[0-9]{10,15}$/.test(mobile.value)) {
         toast.warning('সঠিক মোবাইল নম্বর দিন');
         return false;
     }
@@ -39,7 +40,7 @@ const validateForm = () => {
     return true;
 };
 
-const placeOrder = () => {
+const placeOrder = async () => {
     if (!validateForm()) return;
     if (cart.value.length === 0) {
         toast.warning('কার্ট খালি!');
@@ -48,45 +49,61 @@ const placeOrder = () => {
 
     isSubmitting.value = true;
 
-    router.post(
-        '/checkout',
-        {
+    const firstProduct = cart.value[0];
+
+    try {
+        console.log({
             name: name.value,
             mobile: mobile.value,
             email: email.value,
             shipping_address: address.value + ', ' + selectedDistrict.value,
             payment_status: 'unpaid',
-            product_id: cart.value.map((item) => item.id),
-            quantity: cart.value.map((item) => item.quantity),
-            price: cart.value.map((item) => item.price),
+            source: 'website',
             cart: cart.value,
-            total_amount: total.value,
+            total_amount: cartTotal.value,
+            status: 'pending',
             delivery_charge: getDeliveryCharge(),
-        },
-        {
-            onSuccess: () => {
-                toast.success('অর্ডার সফলভাবে প্লেস হয়েছে!');
-                clearCart();
-                name.value = '';
-                mobile.value = '';
-                email.value = '';
-                address.value = '';
-                selectedDistrict.value = '';
-                isSubmitting.value = false;
-            },
-            onError: (errors) => {
-                toast.error(errors?.message || 'কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন');
-                isSubmitting.value = false;
-            },
-        },
-    );
+        });
+        const res = await axios
+            .post('http://127.0.0.1:8000/api/v1/order', {
+                name: name.value,
+                mobile: mobile.value,
+                email: email.value,
+                shipping_address: address.value + ', ' + selectedDistrict.value,
+                payment_status: 'unpaid',
+                source: 'website',
+                product_id: firstProduct.id,
+                quantity: firstProduct.quantity,
+                price: firstProduct.price,
+                total_price: firstProduct.price * firstProduct.quantity,
+                total_amount: cartTotal.value,
+                status: 'pending',
+                delivery_charge: getDeliveryCharge(),
+            })
+            .then((res) => res.data)
+            .catch((err) => {
+                toast.error(err.response?.data?.message || 'কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন');
+                throw err;
+                console.error(err);
+            });
+        toast.success(res.data.message || 'অর্ডার সফলভাবে প্লেস হয়েছে!');
+        clearCart();
+        name.value = '';
+        mobile.value = '';
+        email.value = '';
+        address.value = '';
+        selectedDistrict.value = '';
+    } catch (err) {
+        toast.error(err.response?.data?.message || 'কিছু সমস্যা হয়েছে, আবার চেষ্টা করুন');
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 </script>
 
 <template>
     <Head title="Checkout" />
     <Header />
-
     <div class="mx-auto max-w-6xl px-4 py-10 dark:bg-neutral-900 dark:text-white">
         <h2 class="mb-8 text-center text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">🛍️ Checkout Page</h2>
 
@@ -106,20 +123,20 @@ const placeOrder = () => {
                         </div>
                         <div class="flex items-center gap-2">
                             <button
-                                class="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
                                 @click="decreaseQuantity(item.id)"
                                 :disabled="item.quantity === 1"
+                                class="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
                             >
                                 −
                             </button>
                             <span class="px-2 font-semibold">{{ item.quantity }}</span>
                             <button
-                                class="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
                                 @click="increaseQuantity(item.id)"
+                                class="rounded bg-gray-200 px-2 py-1 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600"
                             >
                                 +
                             </button>
-                            <button class="ml-2 text-sm text-red-500 hover:underline" @click="removeFromCart(item.id)">Remove</button>
+                            <button @click="removeFromCart(item.id)" class="ml-2 text-sm text-red-500 hover:underline">Remove</button>
                         </div>
                     </div>
 
@@ -140,19 +157,11 @@ const placeOrder = () => {
                         </button>
                     </div>
                 </div>
-                <!-- select payment method -->
-                <div class="mt-6 space-y-2 border-t pt-4">
-                    <div class="flex justify-between text-lg">
-                        <span>Payment Method:</span>
-                        <!-- card here , bkash,sslcomerce,cod  -->
-                    </div>
-                </div>
             </section>
 
-            <!-- Form Section -->
+            <!-- Info Form Section -->
             <section class="rounded-xl bg-white p-6 shadow-lg dark:bg-neutral-800">
                 <h3 class="mb-4 border-b pb-2 text-2xl font-semibold">Your Info</h3>
-
                 <div class="space-y-4">
                     <div>
                         <label class="block font-medium">Name <span class="text-red-500">*</span></label>
@@ -199,7 +208,6 @@ const placeOrder = () => {
                             class="w-full rounded-md border px-4 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none"
                         ></textarea>
                     </div>
-
                     <button
                         @click="placeOrder"
                         :disabled="isSubmitting"
