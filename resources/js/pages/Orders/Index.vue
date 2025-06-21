@@ -365,6 +365,76 @@ const searchQuery = ref('');
 function handleProductSearch(productName: string) {
     searchQuery.value = productName;
 }
+
+// Invoice printing methode
+interface Order {
+    id: string;
+    user: { name: string } | null;
+    total_amount: number;
+    status: string;
+    created_at: string;
+    items: {
+        product_id: number;
+        product?: {
+            image?: string;
+            name?: string;
+        };
+    }[];
+}
+function printInvoice(orders: Order[] | Order | null | undefined) {
+    const orderList = Array.isArray(orders) ? orders : orders ? [orders] : [];
+    alert(orderList.length);
+    if (orderList.length === 2) return;
+    const htmlContent = `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .invoice { border: 1px dashed #333; padding: 12px; margin-bottom: 20px; width: 260px; }
+          .invoice h3 { margin-top: 0; }
+          .invoice p { margin: 4px 0; font-size: 13px; }
+        </style>
+      </head>
+      <body>
+        ${orderList
+            .map(
+                (order) => `
+              <div class="invoice">
+                <h3>🧾 Invoice #${order.id}</h3>
+                <p><strong>Customer:</strong> ${order.user?.name ?? 'N/A'}</p>
+                <p><strong>Total:</strong> ৳${order.total_amount}</p>
+                <p><strong>Status:</strong> ${order.status}</p>
+                <p><strong>Date:</strong> ${new Date(order.created_at).toLocaleDateString()}</p>
+                <hr />
+                <p><strong>Items:</strong></p>
+                <ul>
+                  ${order.items
+                      .map(
+                          (item) => `
+                        <li>${item.product?.name ?? 'Unknown'} (${item.product_id})</li>
+                      `,
+                      )
+                      .join('')}
+                </ul>
+              </div>
+            `,
+            )
+            .join('')}
+      </body>
+    </html>
+  `;
+
+    const printWindow = window.open('', '_blank', 'width=300,height=1250');
+    if (printWindow) {
+        printWindow.document.write(htmlContent);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.onload = () => {
+            printWindow.print();
+            printWindow.close();
+        };
+    }
+}
 </script>
 
 <template>
@@ -372,7 +442,6 @@ function handleProductSearch(productName: string) {
     <AppLayout>
         <div class="min-h-screen space-y-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 text-white">
             <!-- Header Section -->
-
             <!-- Error Message -->
             <div
                 v-if="errorMessage"
@@ -511,6 +580,7 @@ function handleProductSearch(productName: string) {
                     </div>
                 </div>
             </div>
+            <button @click="printInvoice(selectedOrders)" class="mr-2 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">POS Print</button>
             <button @click="showSearchModal = true" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">🔍 Filter By Product</button>
             <!-- Orders Table -->
             <div
@@ -567,10 +637,12 @@ function handleProductSearch(productName: string) {
                                 </td>
                                 <td class="p-4">
                                     <div class="space-y-2">
-                                        <div class="rounded-md border border-slate-600/30 bg-slate-700/50 px-2 py-1 font-mono text-sm">
+                                        <div
+                                            class="flex items-center rounded-md border border-slate-600/30 bg-slate-700/50 px-2 py-1 align-middle font-mono text-sm"
+                                        >
                                             <span class="text-slate-300">ID:</span>
-                                            <span class="flex items-center align-middle text-sm font-semibold text-blue-300"
-                                                >{{ order.id }} {{ order.source ? `${order.source}` : '' }}</span
+                                            <span class="text-sm font-semibold text-blue-300"
+                                                >{{ order.id }} | {{ order.source ? `${order.source}` : '' }}</span
                                             >
                                         </div>
                                         <div class="flex items-center space-x-2">
@@ -614,11 +686,11 @@ function handleProductSearch(productName: string) {
                                             </div>
                                             <span class="font-medium text-slate-200">
                                                 <span
-                                                    class="rounded bg-slate-600/50 px-2 py-1 text-xs font-semibold text-slate-400 dark:text-slate-300"
+                                                    class="mr-2 rounded bg-slate-600/50 px-2 py-1 text-xs font-semibold text-slate-400 dark:text-slate-300"
                                                 >
                                                     {{ getUserTrustLevel(order.user?.mobile || '') }}</span
                                                 >
-                                                <span class="text-xs font-semibold">
+                                                <span class="mr-2 text-xs font-semibold">
                                                     {{ order.user?.name ?? 'Guest' }}
                                                 </span>
                                                 <br />
@@ -847,4 +919,30 @@ function handleProductSearch(productName: string) {
             </div>
         </div>
     </div>
+
+    <!-- Add just below your modal or outside template if needed -->
+    <div ref="printArea" class="hidden h-[1250px] w-[230px] bg-white p-2 text-xs text-black print:block">
+        <div v-if="selectedOrder">
+            <h2 class="mb-2 text-center text-sm font-bold">Invoice</h2>
+            <p>Order ID: {{ selectedOrder.id }}</p>
+            <p>Customer: {{ selectedOrder.user?.name }}</p>
+            <p>Date: {{ formatDate(selectedOrder.created_at) }}</p>
+            <hr class="my-2" />
+            <div v-for="item in selectedOrder.items" :key="item.product_id" class="mb-1">
+                <p>{{ item.product?.name }} x {{ item.quantity }} = ৳{{ item.quantity * item.price }}</p>
+            </div>
+            <hr class="my-2" />
+            <p>Total: ৳{{ selectedOrder.total_amount }}</p>
+        </div>
+    </div>
 </template>
+<style scoped>
+@media print {
+    body {
+        width: 60mm;
+        height: 125mm;
+        margin: 0;
+        padding: 0;
+    }
+}
+</style>

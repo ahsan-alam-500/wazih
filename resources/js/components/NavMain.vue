@@ -47,6 +47,7 @@ const items = [
     { title: 'Reports', href: '/admin/reports', icon: BarChart },
 
     // Landing page operate links
+    { title: 'Products', href: route('products.index'), icon: ShoppingCart },
     { title: 'Landing Pages', href: route('landingPages.index'), icon: ShoppingCart },
 ];
 </script>

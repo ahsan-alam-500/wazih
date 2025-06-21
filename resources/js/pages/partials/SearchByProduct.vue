@@ -1,6 +1,8 @@
 <template>
-    <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-        <div class="max-h-[90vh] w-full max-w-5xl overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-gray-900">
+    <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md">
+        <div
+            class="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700"
+        >
             <!-- Header -->
             <div class="sticky top-0 z-10 flex items-center justify-between border-b bg-white px-6 py-4 dark:border-gray-700 dark:bg-gray-800">
                 <h2 class="text-xl font-bold text-gray-800 dark:text-white">🔍 Search Orders by Product</h2>
@@ -13,7 +15,7 @@
                     v-model="searchText"
                     type="text"
                     placeholder="Search product..."
-                    class="mb-4 w-full rounded-lg border px-4 py-2 text-sm dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    class="mb-4 w-full rounded-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                 />
 
                 <!-- Filters -->
@@ -22,7 +24,7 @@
                         v-for="option in filterOptions"
                         :key="option.label"
                         @click="setDateFilter(option.value)"
-                        class="rounded-full px-4 py-1.5 text-sm font-medium transition-all"
+                        class="rounded-full px-4 py-1.5 text-sm font-medium shadow-sm transition-all"
                         :class="{
                             'bg-blue-600 text-white': dateFilter === option.value,
                             'bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600':
@@ -34,15 +36,20 @@
                 </div>
 
                 <!-- Product List -->
-                <div class="mb-6 grid grid-cols-1 gap-2 md:grid-cols-2">
+                <div class="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                     <div
                         v-for="product in filteredProducts"
                         :key="product.id"
-                        class="cursor-pointer rounded-md border px-4 py-2 text-sm transition-all hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-700"
-                        :class="{ 'bg-blue-100 dark:bg-gray-600': selectedProduct?.id === product.id }"
+                        class="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm transition hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700"
+                        :class="{ 'bg-blue-100 dark:bg-gray-700': selectedProduct?.id === product.id }"
                         @click="selectProduct(product)"
                     >
-                        {{ product.name }}
+                        <div
+                            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-white"
+                        >
+                            {{ product.name.charAt(0).toUpperCase() }}
+                        </div>
+                        <span class="text-sm font-medium text-gray-800 dark:text-white">{{ product.name }}</span>
                     </div>
                 </div>
 
@@ -54,14 +61,14 @@
 
                     <div v-if="filteredOrders.length" class="overflow-x-auto rounded-lg border dark:border-gray-700">
                         <table class="min-w-full text-sm">
-                            <thead class="bg-gray-100 dark:bg-gray-800">
+                            <thead class="bg-gray-100 text-left dark:bg-gray-800">
                                 <tr>
-                                    <th class="px-4 py-2 text-left">Order ID</th>
-                                    <th class="px-4 py-2 text-left">image</th>
-                                    <th class="px-4 py-2 text-left">Customer</th>
-                                    <th class="px-4 py-2 text-left">Amount</th>
-                                    <th class="px-4 py-2 text-left">Status</th>
-                                    <th class="px-4 py-2 text-left">Date</th>
+                                    <th class="px-4 py-2">Order ID</th>
+                                    <th class="px-4 py-2">Image</th>
+                                    <th class="px-4 py-2">Customer</th>
+                                    <th class="px-4 py-2">Amount</th>
+                                    <th class="px-4 py-2">Status</th>
+                                    <th class="px-4 py-2">Date</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -75,7 +82,7 @@
                                         <img
                                             :src="order.items[0]?.product?.image ?? '/placeholder.jpg'"
                                             :alt="order.items[0]?.product?.name ?? 'Product'"
-                                            class="h-12 w-12 rounded-full object-cover"
+                                            class="h-10 w-10 rounded object-cover ring-1 ring-gray-200 dark:ring-gray-700"
                                         />
                                     </td>
                                     <td class="px-4 py-2">{{ order.user?.name }}</td>
@@ -215,6 +222,6 @@ function formatDate(date: string) {
 <style scoped>
 button:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 0 2px rgba(59, 130, 24 6, 0.5);
 }
 </style>
