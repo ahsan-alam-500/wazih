@@ -13,7 +13,7 @@ const modelValue = defineModel<[Date | null, Date | null]>({ required: true });
     range
     :dark="true"
     :enable-time-picker="false"
-    input-class-name="w-full border px-4 py-2 rounded dark:bg-neutral-900 dark:text-white"
+    input-class-name="w-full border px-4 py-2 rounded dark:bg-neutral-900 dark:text-white z-9999999"
     placeholder="Select custom date range"
   />
 </template>

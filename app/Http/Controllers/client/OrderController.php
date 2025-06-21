@@ -19,83 +19,83 @@ use Illuminate\Support\Facades\Http;
 
 class OrderController extends Controller
 {
-        public function create(Request $request)
-        {
-            $validator = Validator::make($request->all(), [
-                'name'             => 'required|string|max:255',
-                'email'            => 'required|email',
-                'mobile'           => 'required',
-                'total_amount'     => 'required|numeric',
-                'source'           => 'nullable|string',
-                'payment_status'   => 'required|string',
-                'shipping_address' => 'required|string',
-                'cart'             => 'required|array|min:1',
-                'cart.*.id'        => 'required|integer|exists:products,id',
-                'cart.*.quantity'  => 'required|integer|min:1',
-                'cart.*.price'     => 'required|numeric',
+    public function create(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name'             => 'required|string|max:255',
+            'email'            => 'required|email',
+            'mobile'           => 'required',
+            'total_amount'     => 'required|numeric',
+            'source'           => 'nullable|string',
+            'payment_status'   => 'required|string',
+            'shipping_address' => 'required|string',
+            'cart'             => 'required|array|min:1',
+            'cart.*.id'        => 'required|integer|exists:products,id',
+            'cart.*.quantity'  => 'required|integer|min:1',
+            'cart.*.price'     => 'required|numeric',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $user = User::firstOrCreate(
+                ['email' => $request->email],
+                [
+                    'name'     => $request->name,
+                    'mobile'   => $request->mobile,
+                    'role'     => 'customer',
+                    'password' => Hash::make($request->email),
+                ]
+            );
+
+            $order = Order::create([
+                'user_id'          => $user->id,
+                'order_number'     => Str::random(10),
+                'total_amount'     => $request->total_amount,
+                'source'           => $request->source,
+                'payment_status'   => $request->payment_status,
+                'shipping_address' => $request->shipping_address,
+                'status'           => $request->status ?? 'pending',
             ]);
 
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors'  => $validator->errors(),
-                ], 422);
+            foreach ($request->cart as $item) {
+                Order_items::create([
+                    'order_id'   => $order->id,
+                    'product_id' => $item['id'],
+                    'quantity'   => $item['quantity'],
+                    'price'      => $item['price'],
+                    'total'      => $item['price'] * $item['quantity'],
+                ]);
             }
 
-            try {
-                $user = User::firstOrCreate(
-                    ['email' => $request->email],
-                    [
-                        'name'     => $request->name,
-                        'mobile'   => $request->mobile,
-                        'role'     => 'customer',
-                        'password' => Hash::make($request->email),
-                    ]
-                );
+            Activity::create([
+                'user_id' => $user->id,
+                'action' => "Order Has been Placed",
+                'description' => "A new order has been placed",
+            ]);
 
-                $order = Order::create([
-                    'user_id'          => $user->id,
-                    'order_number'     => Str::random(10),
-                    'total_amount'     => $request->total_amount,
-                    'source'           => $request->source,
-                    'payment_status'   => $request->payment_status,
-                    'shipping_address' => $request->shipping_address,
-                    'status'           => $request->status ?? 'pending',
-                ]);
+            event(new PlaceOrder($order));
 
-                foreach ($request->cart as $item) {
-                    Order_items::create([
-                        'order_id'   => $order->id,
-                        'product_id' => $item['id'],
-                        'quantity'   => $item['quantity'],
-                        'price'      => $item['price'],
-                        'total'      => $item['price'] * $item['quantity'],
-                    ]);
-                }
-
-                Activity::create([
-                    'user_id' => $user->id,
-                    'action' => "Order Has been Placed",
-                    'description' => "A new order has been placed",
-                ]);
-
-                event(new PlaceOrder($order));
-
-                return response()->json([
-                    'success'   => true,
-                    'message'   => 'Order created successfully',
-                    'order_id'  => $order->id,
-                    'user_id'   => $user->id,
-                ]);
-            } catch (\Exception $e) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Order creation failed',
-                    'error'   => $e->getMessage(),
-                ], 500);
-            }
+            return response()->json([
+                'success'   => true,
+                'message'   => 'Order created successfully',
+                'order_id'  => $order->id,
+                'user_id'   => $user->id,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order creation failed',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
+    }
 
     public function wpOrder(Request $request)
     {
@@ -215,6 +215,10 @@ class OrderController extends Controller
                 "stage" => "Basic",
                 "status" => "active",
                 "point" => 1,
+            ]);
+
+            Order::where('id', $request->id)->update([
+                'status' => $request->status,
             ]);
         } catch (\Exception $e) {
             \Log::error('EmployeeRange create failed: ' . $e->getMessage());
