@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import CDateRangePicker from '@/components/ui/CDateRangePicker.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import ProductSearchModal from '@/pages/partials/SearchByProduct.vue';
 import { Head } from '@inertiajs/vue3';
 import '@vuepic/vue-datepicker/dist/main.css';
 import axios from 'axios';
 import { computed, ref } from 'vue';
 import InvoiceModal from '../partials/Invoice.vue';
 import TrustModal from '../partials/TrustModel.vue';
-
 interface Order {
     id: string;
     user: { name: string; avatar?: string | null; mobile: string } | null;
@@ -55,7 +55,7 @@ const bulkStatus = ref('');
 const bulkPaymentStatus = ref('');
 const isBulkUpdating = ref(false);
 
-const statusOptions = ['pending', 'processing', 'completed', 'cancelled'];
+const statusOptions = ['pending', 'processing', 'in_courier', 'shipped', 'delivered', 'completed', 'cancelled'];
 const sourceOptions = ['facebook', 'website', 'whatsapp'];
 const datePresets = ['Today', 'Yesterday', 'Last 7 Days', 'Last 30 Days', 'This Month', 'Last Month'];
 
@@ -134,7 +134,6 @@ function closeInvoice() {
     showInvoice.value = false;
     selectedOrder.value = null;
 }
-
 async function handleStatusUpdate({
     orderId,
     newStatus,
@@ -152,6 +151,7 @@ async function handleStatusUpdate({
             order_id: orderId,
             status: newStatus,
             payment_status: newPaymentStatus,
+            withCredentials: true,
         });
 
         // Show success message
@@ -294,7 +294,6 @@ function openBulkActions() {
 
 async function executeBulkAction() {
     if (selectedOrders.value.size === 0) return;
-
     isBulkUpdating.value = true;
     errorMessage.value = null;
     let successCount = 0;
@@ -360,6 +359,12 @@ function formatDate(dateString: string): string {
         day: 'numeric',
     });
 }
+const showSearchModal = ref(false);
+const searchQuery = ref('');
+
+function handleProductSearch(productName: string) {
+    searchQuery.value = productName;
+}
 </script>
 
 <template>
@@ -394,7 +399,6 @@ function formatDate(dateString: string): string {
                     </button>
                 </div>
             </div>
-
             <!-- Filters Section -->
             <div class="rounded-xl border border-slate-600/30 bg-gradient-to-r from-slate-800/50 to-slate-700/50 shadow-xl backdrop-blur-sm">
                 <div class="p-6">
@@ -507,7 +511,7 @@ function formatDate(dateString: string): string {
                     </div>
                 </div>
             </div>
-
+            <button @click="showSearchModal = true" class="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">🔍 Filter By Product</button>
             <!-- Orders Table -->
             <div
                 class="overflow-hidden rounded-xl border border-slate-600/30 bg-gradient-to-br from-slate-800/80 to-slate-900/80 shadow-2xl backdrop-blur-sm"
@@ -625,7 +629,8 @@ function formatDate(dateString: string): string {
                                 </td>
                                 <!-- update  -->
                                 <td class="p-4">
-                                    {{ order.updated_at ? formatDate(order.updated_at) : 'N/A' }}
+                                    {{ order.updated_at ? formatDate(order.updated_at) : 'N/A' }} <br />
+                                    By - {{ order.status_updated_by ? order.status_updated_by : 'N/A' }}
                                 </td>
                                 <!-- address  -->
                                 <td class="p-4">
@@ -659,7 +664,6 @@ function formatDate(dateString: string): string {
                                         </div>
                                     </div>
                                 </td>
-
                                 <td class="p-4">
                                     <button
                                         @click="toggleTrustCheck(order.id, order.user?.mobile || '')"
@@ -723,10 +727,9 @@ function formatDate(dateString: string): string {
             </div>
         </div>
     </AppLayout>
-
-    <InvoiceModal :order="selectedOrder" :show="showInvoice" @close="closeInvoice" @update-status="handleStatusUpdate" />
-    <TrustModal :show="trustModalVisible" :summary="trustSummary" :loading="isLoading" @close="trustModalVisible = false" />
-
+    <ProductSearchModal :show="showSearchModal" @close="showSearchModal = false" @search="handleProductSearch" />
+    <InvoiceModal :order="selectedOrder" :show="showInvoice" @close="closeInvoice" />
+    <TrustModal :show="trustModalVisible" :summary="trustSummary" @close="trustModalVisible = false" />
     <!-- Bulk Actions Modal -->
     <div v-if="showBulkActions" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
         <div class="w-full max-w-md rounded-xl border border-slate-600/30 bg-gradient-to-br from-slate-800 to-slate-900 p-6 shadow-2xl">

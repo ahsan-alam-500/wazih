@@ -12,6 +12,7 @@ class Order extends Model
         'order_number',
         'source',
         'total_amount',
+        'status_updated_by',
         'shipping_address'
     ];
 
@@ -27,7 +28,7 @@ class Order extends Model
 
     public function items()
     {
-        return $this->hasMany(Order_items::class);
+        return $this->hasMany(order_items::class);
     }
 
     public function payments()

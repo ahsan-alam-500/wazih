@@ -196,6 +196,8 @@ class OrderController extends Controller
             $data['payment_status'] = $request->payment_status;
         }
 
+        $data['status_updated_by'] = $request->user()->id . '-' . $request->user()->name;
+
         Order::where('id', $request->order_id)->update($data);
 
         $user = Auth::user();
@@ -215,10 +217,6 @@ class OrderController extends Controller
                 "stage" => "Basic",
                 "status" => "active",
                 "point" => 1,
-            ]);
-
-            Order::where('id', $request->id)->update([
-                'status' => $request->status,
             ]);
         } catch (\Exception $e) {
             \Log::error('EmployeeRange create failed: ' . $e->getMessage());

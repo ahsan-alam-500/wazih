@@ -4,6 +4,8 @@ use App\Http\Controllers\AbandonedController;
 use App\Http\Controllers\client\OrderController;
 use App\Http\Controllers\FraudCheckerController;
 use App\Http\Controllers\LandingPageController;
+use App\Models\Order;
+use App\Models\Order_items;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -17,10 +19,15 @@ Route::get('/v1/products', function () {
     $products = Product::latest()->take(20)->get(); // optional limit
     return response()->json(['products' => $products]);
 });
+
+Route::get('v1/orders', function () {
+    $orders = Order::with(['items.product', 'user'])->latest()->get();
+    return response()->json(['orders' => $orders]);
+});
 // creating ordar
 Route::post('/v1/order', [OrderController::class, 'create']);
 // order Getting from wordpress websites
-Route::post('/v1/wp/order', [OrderController::class, 'wpOrder']);
+Route::middleware('auth:sanctum')->post('/v1/wp/order', [OrderController::class, 'wpOrder']);
 //updating order status
 Route::post('/v1/order/update', [OrderController::class, 'update']);
 //fraud checking api
